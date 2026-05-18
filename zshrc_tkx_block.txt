@@ -1,0 +1,61 @@
+# ============================================================
+# BEGIN_TKX_ENV — 由部署脚本管理，请勿手动修改此块内容
+# ============================================================
+
+# ── 0. Keychain 自动解锁（SSH 非交互 session 需要）──────────
+bash ~/.unlock-keychain.sh 2>/dev/null
+
+# ── 1. Core PATH（架构自适应：ARM /opt/homebrew | Intel /usr/local）──
+if [ -d "/opt/homebrew" ]; then
+  export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"   # Apple Silicon
+elif [ -d "/usr/local/Homebrew" ]; then
+  export PATH="/usr/local/bin:/usr/local/sbin:$PATH"          # Intel
+fi
+export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+export PATH="$HOME/.opencode/bin:$PATH"
+
+# ── 2. Locale & Encoding ────────────────────────────────────
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+export __CF_USER_TEXT_ENCODING="0x1F5:0x8000100:0x2A"
+
+# ── 3. Low-Level Tuning ─────────────────────────────────────
+ulimit -n 65536
+
+# ── 4. Python (pyenv explicit-only 逃生口) ──────────────────
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+# 注意：不执行 eval "$(pyenv init -)"
+# uv 管理 ~/.local/bin/python3*，pyenv 仅作显式调用逃生口
+# 需要时用: pyenv exec python3.X script.py
+
+# ── 5. Node.js (fnm) ────────────────────────────────────────
+export FNM_DIR="$HOME/.local/share/fnm"
+eval "$(fnm env --use-on-cd --corepack-enabled)"
+
+# ── 6. Rust (Cargo) ─────────────────────────────────────────
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+
+# ── 7. AI CLI 路由（已移除 fnm exec alias — Phase 9 wrapper 在 ~/.local/bin/ 接管）──
+# 旧 alias 行（claude/gemini/codex/qwen/firecrawl/sisyphus/playwright）已删除：
+#   - wrapper 在交互/非交互/cron/SSH 全场景生效；alias 仅交互式 zsh 生效
+#   - wrapper PATH 含 /usr/sbin（gemini-cli 内部 sysctl 调用必需）
+# 工作流 alias 保留（带特殊参数，wrapper 自动接管 fnm exec 部分）
+
+alias c-d='claude --dangerously-skip-permissions'
+alias o-d='opencode'
+alias g-d='gemini --approval-mode yolo'
+alias c-y='fnm exec --using=ai-node codex --yolo'
+
+# ── 8. Tmux 防嵌套 ──────────────────────────────────────────
+if [[ -z "$TMUX" && -n "$PS1" ]]; then
+    if [[ "$TERM_PROGRAM" != "vscode" && "$TERMINAL_EMULATOR" != "JetBrains-JediTerm" ]]; then
+        tmux attach-session -t workspace 2>/dev/null || tmux new-session -s workspace
+    fi
+fi
+
+# ── 9. UI Engine（必须最后一行）────────────────────────────
+eval "$(starship init zsh)"
+
+# END_TKX_ENV
+# ============================================================
