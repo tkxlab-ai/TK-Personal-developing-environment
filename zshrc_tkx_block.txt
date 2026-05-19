@@ -45,7 +45,7 @@ eval "$(fnm env --use-on-cd --corepack-enabled)"
 alias c-d='claude --dangerously-skip-permissions'
 alias o-d='opencode'
 alias g-d='gemini --approval-mode yolo'
-alias c-y='fnm exec --using=ai-node codex --yolo'
+alias c-y='codex --yolo'
 
 # ── 8. Tmux 防嵌套 ──────────────────────────────────────────
 if [[ -z "$TMUX" && -n "$PS1" ]]; then
